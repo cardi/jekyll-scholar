@@ -31,19 +31,33 @@ module Jekyll
 
       def generate(site)
         @site, @config = site, Scholar.defaults.merge(site.config['scholar'] || {})
+        @cache ||= Jekyll::Cache.new("Jekyll::Scholar::DetailsGenerator")
 
         if generate_details?
           entries.each do |entry|
             details = Details.new(site, site.source, File.join('', details_path), entry)
+
+            # on first run, cache miss
+            # on subsequent runs, should cache hit
+            printf "[jekyll-scholar/details.rb] %s in cache? %s\n", details.path, @cache.key?(details.path)
+            if @cache.key?(details.path) != true
+              @cache[details.path] = 1
+            done
+
+            # on first entry, cache miss
+            # on subsequent entries (and runs), should cache hit
+            if @cache.key?("test-key") != true
+              printf "[jekyll-scholar/details.rb] 'test-key' not in cache\n"
+              printf "[jekyll-scholar/details.rb] store 'test-key' in cache\n"
+              @cache["test-key"] = "12345"
+            else
+              printf "[jekyll-scholar/details.rb] 'test-key' in cache, value is %s\n", @cache["test-key"]
+            end
+
             details.render(site.layouts, site.site_payload)
             details.write(site.dest)
 
             site.pages << details
-
-            site.regenerator.add_dependency(
-              site.in_source_dir(details.path),
-              bibtex_path
-            )
           end
 
         end
