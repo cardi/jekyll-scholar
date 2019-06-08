@@ -42,7 +42,7 @@ module Jekyll
             printf "[jekyll-scholar/details.rb] %s in cache? %s\n", details.path, @cache.key?(details.path)
             if @cache.key?(details.path) != true
               @cache[details.path] = 1
-            done
+            end
 
             # on first entry, cache miss
             # on subsequent entries (and runs), should cache hit
