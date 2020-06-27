@@ -51,25 +51,56 @@ module Jekyll
 
             # on first run, cache miss
             # on subsequent runs, should cache hit
-            printf "[jekyll-scholar/details.rb] %s in cache? %s\n", details.path, @cache.key?(details.path)
-            if @cache.key?(details.path) != true
-              @cache[details.path] = 1
-            end
+            printf "[jekyll-scholar/details.rb] %s in cache? %s\n".red, details.path, @cache.key?(details.path)
+            #if @cache.key?(details.path) != true
+            #  @cache[details.path] = 1
+            #end
 
             # on first entry, cache miss
             # on subsequent entries (and runs), should cache hit
             if @cache.key?("test-key") != true
-              printf "[jekyll-scholar/details.rb] 'test-key' not in cache\n"
-              printf "[jekyll-scholar/details.rb] store 'test-key' in cache\n"
+              printf "[jekyll-scholar/details.rb] 'test-key' not in cache\n".red
+              printf "[jekyll-scholar/details.rb] store 'test-key' in cache\n".red
               @cache["test-key"] = "12345"
             else
-              printf "[jekyll-scholar/details.rb] 'test-key' in cache, value is %s\n", @cache["test-key"]
+              printf "[jekyll-scholar/details.rb] 'test-key' in cache, value is %s\n".red, @cache["test-key"]
             end
 
-            details.render(site.layouts, site.site_payload)
-            details.write(site.dest)
+            #printf "%s".blue, details
+            # renders! this is the most expensive part
 
+            starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+            if @cache.key?(details.path)
+              printf "[jekyll-scholar/details.rb] '%s' in cache\n".red, details.path
+              #printf "%s\n", @cache[details.path]
+              details.content = @cache[details.path]
+            else
+              printf "[jekyll-scholar/details.rb] '%s' NOT in cache\n".red, details.path
+              details.render(site.layouts, site.site_payload)
+              @cache[details.path] = details.content
+            end
+
+            ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+            elapsed = ending - starting
+
+            printf "[jekyll-scholar/details.rb] %s: took %f\n".blue, details.path, elapsed
+
+            ##@cache.getset(details.path) do
+            ##  printf "[jekyll-scholar/details.rb] store '%s' in cache\n".red, details.path
+            ##  details.render(site.layouts, site.site_payload)
+            ##  details
+            ##end
+            #printf "%s".green, details
+            ##printf "[jekyll-scholar/details.rb] %s".red, site.dest
+
+            # this writes the file to the destination
+            details.write(site.dest)
+            #printf "%s".yellow, details
+
+            # adds a reference to list of pages
             site.pages << details
+            #printf "%s".blue, site.pages
           end
 
         end
